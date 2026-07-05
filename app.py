@@ -206,6 +206,19 @@ def list_processes():
     except Exception:
         lines = []
 
+    def get_cwd(pid: str) -> Optional[str]:
+        try:
+            r = subprocess.run(
+                ["/usr/sbin/lsof", "-p", pid, "-a", "-d", "cwd", "-Fn"],
+                capture_output=True, text=True, timeout=3,
+            )
+            for l in r.stdout.splitlines():
+                if l.startswith("n"):
+                    return l[1:].strip()
+        except Exception:
+            pass
+        return None
+
     seen: set = set()
     servers = []
     for line in lines:
@@ -215,6 +228,7 @@ def list_processes():
         if len(parts) < 9:
             continue
         cmd = parts[0]
+        pid = parts[1]
         if cmd in SKIP_CMDS:
             continue
         # addr is second-to-last: NAME col is "addr (LISTEN)"
@@ -229,9 +243,13 @@ def list_processes():
         if port < 1024 or port in seen:
             continue
         seen.add(port)
+        cwd = get_cwd(pid)
+        project = cwd.split("/")[-1] if cwd else cmd
         servers.append({
             "port": port,
             "name": cmd,
+            "project": project,
+            "cwd": cwd,
             "url": f"http://{tailscale_ip}:{port}" if tailscale_ip else f"http://localhost:{port}",
         })
 

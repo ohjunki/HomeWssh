@@ -202,7 +202,16 @@ body {
   gap: 10px;
 }
 .proc-item:hover { background: rgba(255,255,255,0.06); }
-.proc-name { font-size: 13px; color: #aeaeb2; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proc-info { flex: 1; min-width: 0; }
+.proc-project {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.proc-name { font-size: 11px; color: #636366; margin-top: 2px; }
 .proc-port {
   font-size: 13px;
   font-weight: 600;
@@ -1320,7 +1329,10 @@ function renderProc(d) {
   }
   document.getElementById('proc-body').innerHTML = servers.map(s => `
     <div class="proc-item" onclick="window.open('${s.url}','_blank')">
-      <span class="proc-name">${s.name}</span>
+      <div class="proc-info">
+        <div class="proc-project">${esc(s.project)}</div>
+        <div class="proc-name">${esc(s.name)} · ${esc(s.cwd || '')}</div>
+      </div>
       <span class="proc-port">:${s.port}</span>
     </div>
   `).join('');
