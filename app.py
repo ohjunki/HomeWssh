@@ -1,5 +1,7 @@
 import asyncio
+import base64
 import json
+import mimetypes
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -17,7 +19,8 @@ DATA_FILE = BASE / "data.json"
 STATIC_DIR = BASE / "static"
 JKPROJECT = Path.home() / "JKProject"
 CLAUDE_BIN = "/opt/homebrew/bin/claude"
-IGNORED = {"wssh", ".git", "__pycache__", "node_modules", ".DS_Store"}
+IGNORED = {".git", "__pycache__", "node_modules", ".DS_Store"}
+IGNORED_FILES = IGNORED | {".env", "venv", ".venv", ".mypy_cache", ".pytest_cache", "dist", "build"}
 
 
 def scan_projects():
@@ -41,36 +44,216 @@ def save_data(data):
     DATA_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2))
 
 
+VALID_MODELS = {"haiku", "sonnet", "opus", "fable"}
+VALID_EFFORTS = {"low", "medium", "high", "xhigh", "max"}
+
+
 class Message(BaseModel):
     text: str
+    image_data: Optional[str] = None
+    image_mime: Optional[str] = None
+    model: Optional[str] = None
+    effort: Optional[str] = None
 
 
-async def run_claude(cmd, cwd: str):
+class ProjectCreate(BaseModel):
+    name: str
+
+
+async def run_claude(cmd, cwd: str, stdin_data: Optional[bytes] = None):
     proc = await asyncio.create_subprocess_exec(
         *cmd,
+        stdin=asyncio.subprocess.PIPE if stdin_data is not None else None,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
         cwd=cwd,
     )
-    stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=180)
+    stdout, stderr = await asyncio.wait_for(proc.communicate(input=stdin_data), timeout=3600)
     return proc.returncode, stdout.decode(), stderr.decode()
 
 
-def build_cmd(text: str, session_id: Optional[str]):
+def build_cmd(text: str, session_id: Optional[str], model: Optional[str] = None, effort: Optional[str] = None):
     cmd = [CLAUDE_BIN]
     if session_id:
         cmd += ["--resume", session_id]
+    if model in VALID_MODELS:
+        cmd += ["--model", model]
+    if effort in VALID_EFFORTS:
+        cmd += ["--effort", effort]
     cmd += ["-p", text, "--output-format", "json", "--dangerously-skip-permissions"]
     return cmd
+
+
+def build_stream_cmd(session_id: Optional[str], model: Optional[str] = None, effort: Optional[str] = None):
+    cmd = [CLAUDE_BIN]
+    if session_id:
+        cmd += ["--resume", session_id]
+    if model in VALID_MODELS:
+        cmd += ["--model", model]
+    if effort in VALID_EFFORTS:
+        cmd += ["--effort", effort]
+    cmd += ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose", "--dangerously-skip-permissions"]
+    return cmd
+
+
+def parse_stream_output(stdout: str) -> tuple:
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            event = json.loads(line)
+            if event.get("type") == "result":
+                return event.get("result", ""), event.get("session_id")
+        except json.JSONDecodeError:
+            pass
+    return "", None
 
 
 def session_summary(s: dict) -> dict:
     return {k: v for k, v in s.items() if k != "messages"}
 
 
+@app.get("/api/usage")
+def get_usage():
+    from datetime import timezone, timedelta
+
+    CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    window_start = now - timedelta(hours=5)
+    month_start = today_start.replace(day=1)
+
+    seen = set()
+    buckets = {k: {"input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "calls": 0}
+               for k in ("window_5h", "today", "month")}
+    window_timestamps = []
+
+    for jsonl in CLAUDE_PROJECTS.glob("**/*.jsonl"):
+        try:
+            for line in jsonl.read_text(errors="replace").splitlines():
+                try:
+                    d = json.loads(line)
+                    msg = d.get("message", {})
+                    usage = msg.get("usage")
+                    msg_id = msg.get("id", "")
+                    ts_str = d.get("timestamp", "")
+                    if not usage or not ts_str or not msg_id or msg_id in seen:
+                        continue
+                    seen.add(msg_id)
+                    ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+                    inp = usage.get("input_tokens", 0)
+                    out = usage.get("output_tokens", 0)
+                    cr = usage.get("cache_read_input_tokens", 0)
+                    cc = usage.get("cache_creation_input_tokens", 0)
+                    for name, start in [("window_5h", window_start), ("today", today_start), ("month", month_start)]:
+                        if ts >= start:
+                            b = buckets[name]
+                            b["input"] += inp; b["output"] += out
+                            b["cache_read"] += cr; b["cache_creation"] += cc
+                            b["calls"] += 1
+                    if ts >= window_start:
+                        window_timestamps.append(ts)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+    # 5h 윈도우 리셋: 가장 오래된 메시지가 5h 밖으로 나가는 시점
+    if window_timestamps:
+        oldest = min(window_timestamps)
+        resets_at_dt = oldest + timedelta(hours=5)
+        resets_in_min = max(0, int((resets_at_dt - now).total_seconds() / 60))
+        resets_at = resets_at_dt.isoformat()
+    else:
+        resets_in_min = 0
+        resets_at = None
+
+    today_reset_min = int((today_start + timedelta(days=1) - now).total_seconds() / 60)
+
+    def fmt(b):
+        return {**b, "total": b["input"] + b["output"]}
+
+    return {
+        "window_5h": {**fmt(buckets["window_5h"]), "resets_in_min": resets_in_min, "resets_at": resets_at},
+        "today": {**fmt(buckets["today"]), "resets_in_min": today_reset_min},
+        "month": fmt(buckets["month"]),
+    }
+
+
+@app.get("/api/processes")
+def list_processes():
+    import subprocess, re
+
+    SKIP_CMDS = {
+        "postgres", "redis-ser", "mysqld", "rapportd", "identitys",
+        "sharingd", "ControlCe", "CrossEXSe", "replicato",
+    }
+
+    try:
+        ts = subprocess.run(["/usr/local/bin/tailscale", "ip", "-4"], capture_output=True, text=True, timeout=3)
+        tailscale_ip = ts.stdout.strip() if ts.returncode == 0 else None
+    except Exception:
+        tailscale_ip = None
+
+    try:
+        lo = subprocess.run(
+            ["/usr/sbin/lsof", "-i", "-P", "-n", "-sTCP:LISTEN"],
+            capture_output=True, text=True, timeout=5,
+        )
+        lines = lo.stdout.splitlines()[1:]
+    except Exception:
+        lines = []
+
+    seen: set = set()
+    servers = []
+    for line in lines:
+        if "(LISTEN)" not in line:
+            continue
+        parts = line.split()
+        if len(parts) < 9:
+            continue
+        cmd = parts[0]
+        if cmd in SKIP_CMDS:
+            continue
+        # addr is second-to-last: NAME col is "addr (LISTEN)"
+        addr = parts[-2]
+        # localhost-only 포트 제외
+        if addr.startswith("127.") or addr.startswith("[::1]") or addr.startswith("localhost"):
+            continue
+        m = re.search(r":(\d+)$", addr)
+        if not m:
+            continue
+        port = int(m.group(1))
+        if port < 1024 or port in seen:
+            continue
+        seen.add(port)
+        servers.append({
+            "port": port,
+            "name": cmd,
+            "url": f"http://{tailscale_ip}:{port}" if tailscale_ip else f"http://localhost:{port}",
+        })
+
+    servers.sort(key=lambda x: x["port"])
+    return {"tailscale_ip": tailscale_ip, "servers": servers}
+
+
 @app.get("/api/projects")
 def list_projects():
     return scan_projects()
+
+
+@app.post("/api/projects")
+def create_project(req: ProjectCreate):
+    name = req.name.strip()
+    if not name or "/" in name or name.startswith("."):
+        raise HTTPException(400, "잘못된 프로젝트 이름")
+    path = JKPROJECT / name
+    if path.exists():
+        raise HTTPException(409, f"이미 존재함: {name}")
+    path.mkdir(parents=False)
+    return {"name": name, "path": str(path)}
 
 
 @app.get("/api/projects/{name}/sessions")
@@ -117,7 +300,7 @@ def get_messages(sid: str):
 
 @app.post("/api/sessions/{sid}/chat")
 async def chat(sid: str, req: Message):
-    if not req.text.strip():
+    if not req.text.strip() and not req.image_data:
         raise HTTPException(400, "메시지를 입력해주세요")
     data = load_data()
     if sid not in data["sessions"]:
@@ -127,33 +310,63 @@ async def chat(sid: str, req: Message):
     claude_sid = session.get("claude_session_id")
     working_dir = str(JKPROJECT / session["project"])
 
+    user_text = req.text or ""
+    now = datetime.utcnow().isoformat()
+    msg_entry: dict = {"role": "user", "content": user_text}
+    if req.image_data:
+        msg_entry["image_mime"] = req.image_mime or "image/png"
+        if len(req.image_data) < 3_000_000:
+            msg_entry["image_data"] = req.image_data
+        else:
+            msg_entry["image_large"] = True
+    session["messages"].append(msg_entry)
+    session["last_used"] = now
+    display_text = user_text or "이미지 첨부"
+    if len(session["messages"]) == 1:
+        session["name"] = display_text[:22] + ("…" if len(display_text) > 22 else "")
+    save_data(data)
+
+    sel_model = req.model if req.model in VALID_MODELS else None
+    sel_effort = req.effort if req.effort in VALID_EFFORTS else None
     try:
-        rc, stdout, stderr = await run_claude(build_cmd(req.text, claude_sid), working_dir)
-        if rc != 0 and claude_sid:
-            rc, stdout, stderr = await run_claude(build_cmd(req.text, None), working_dir)
+        if req.image_data and req.image_mime:
+            content = [{"type": "image", "source": {"type": "base64", "media_type": req.image_mime, "data": req.image_data}}]
+            if req.text.strip():
+                content.append({"type": "text", "text": req.text})
+            stdin_msg = json.dumps({"type": "user", "message": {"role": "user", "content": content}}).encode()
+            rc, stdout, stderr = await run_claude(build_stream_cmd(claude_sid, sel_model, sel_effort), working_dir, stdin_msg)
+            if rc != 0 and claude_sid:
+                rc, stdout, stderr = await run_claude(build_stream_cmd(None, sel_model, sel_effort), working_dir, stdin_msg)
+            if rc != 0:
+                raise HTTPException(500, f"Claude 오류: {stderr[:500]}")
+            reply, new_claude_sid = parse_stream_output(stdout)
+            if not new_claude_sid:
+                new_claude_sid = claude_sid
+        else:
+            rc, stdout, stderr = await run_claude(build_cmd(req.text, claude_sid, sel_model, sel_effort), working_dir)
+            if rc != 0 and claude_sid:
+                rc, stdout, stderr = await run_claude(build_cmd(req.text, None, sel_model, sel_effort), working_dir)
+            if rc != 0:
+                raise HTTPException(500, f"Claude 오류: {stderr[:500]}")
+            try:
+                output = json.loads(stdout)
+            except json.JSONDecodeError:
+                raise HTTPException(500, f"응답 파싱 실패: {stdout[:300]}")
+            reply = output.get("result", "")
+            new_claude_sid = output.get("session_id", claude_sid)
+    except HTTPException:
+        raise
+    except asyncio.TimeoutError:
+        raise HTTPException(504, "실행 오류: Claude 응답 시간 초과 (1시간)")
     except Exception as e:
-        raise HTTPException(500, f"실행 오류: {e}")
-
-    if rc != 0:
-        raise HTTPException(500, f"Claude 오류: {stderr[:500]}")
-
-    try:
-        output = json.loads(stdout)
-    except json.JSONDecodeError:
-        raise HTTPException(500, f"응답 파싱 실패: {stdout[:300]}")
-
-    reply = output.get("result", "")
-    new_claude_sid = output.get("session_id", claude_sid)
+        raise HTTPException(500, f"실행 오류: [{type(e).__name__}] {e}")
     now = datetime.utcnow().isoformat()
 
     data = load_data()
     s = data["sessions"][sid]
     s["claude_session_id"] = new_claude_sid
     s["last_used"] = now
-    s["messages"].append({"role": "user", "content": req.text})
     s["messages"].append({"role": "assistant", "content": reply})
-    if len(s["messages"]) == 2:
-        s["name"] = req.text[:22] + ("…" if len(req.text) > 22 else "")
     save_data(data)
     return {"reply": reply, "session_name": s["name"]}
 
@@ -167,6 +380,57 @@ def reset_session(sid: str):
     data["sessions"][sid]["messages"] = []
     save_data(data)
     return {"ok": True}
+
+
+@app.delete("/api/sessions/{sid}")
+def delete_session(sid: str):
+    data = load_data()
+    if sid not in data["sessions"]:
+        raise HTTPException(404, "Not found")
+    del data["sessions"][sid]
+    save_data(data)
+    return {"ok": True}
+
+
+@app.get("/api/projects/{name}/tree")
+def get_tree(name: str, path: str = ""):
+    base = (JKPROJECT / name).resolve()
+    target = (base / path).resolve() if path else base
+    if not str(target).startswith(str(base)):
+        raise HTTPException(403, "Access denied")
+    if not target.is_dir():
+        raise HTTPException(400, "Not a directory")
+    items = []
+    try:
+        for p in sorted(target.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
+            if p.name in IGNORED_FILES or p.name.startswith("."):
+                continue
+            rel = str(p.relative_to(base))
+            items.append({"name": p.name, "path": rel, "type": "dir" if p.is_dir() else "file"})
+    except PermissionError:
+        pass
+    return items
+
+
+@app.get("/api/projects/{name}/file")
+def get_file_content(name: str, path: str):
+    base = (JKPROJECT / name).resolve()
+    target = (base / path).resolve()
+    if not str(target).startswith(str(base)):
+        raise HTTPException(403, "Access denied")
+    if not target.is_file():
+        raise HTTPException(404, "Not found")
+    mime, _ = mimetypes.guess_type(str(target))
+    if mime and mime.startswith("image/"):
+        data = base64.b64encode(target.read_bytes()).decode()
+        return {"type": "image", "mime": mime, "data": data}
+    try:
+        content = target.read_text(encoding="utf-8", errors="replace")
+        if len(content) > 300_000:
+            content = content[:300_000] + "\n\n... (파일이 너무 큽니다)"
+        return {"type": "text", "content": content}
+    except Exception:
+        return {"type": "binary"}
 
 
 @app.get("/")

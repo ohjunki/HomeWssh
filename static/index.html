@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>wssh</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -29,6 +31,200 @@ body {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* USAGE POPUP */
+#usage-btn {
+  padding: 7px 10px 9px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+#usage-btn:hover { color: var(--accent); }
+
+#usage-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+#usage-overlay.open { display: block; }
+#usage-backdrop {
+  position: absolute;
+  inset: 0;
+}
+#usage-popup {
+  position: absolute;
+  top: 46px;
+  left: 8px;
+  width: 300px;
+  background: #1c1c1e;
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.85);
+  overflow: hidden;
+  z-index: 1;
+}
+#usage-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.plan-badge {
+  background: #FF6B35;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+#usage-body {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+}
+.usage-item {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.usage-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.usage-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+}
+.usage-pct { font-size: 12px; color: #636366; }
+.usage-pct.red { color: #FF453A; }
+.usage-pct.yellow { color: #FFD60A; }
+.usage-bar-wrap {
+  height: 5px;
+  background: #3A3A3C;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.usage-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: #32D74B;
+  transition: width 0.4s ease;
+}
+.usage-bar.warn { background: #FFD60A; }
+.usage-bar.danger { background: #FF453A; }
+.usage-item-sub { font-size: 11px; color: #636366; }
+.usage-section-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  padding: 10px 0 2px;
+}
+.usage-dot-row { display: flex; align-items: center; }
+.usage-dot { width: 8px; height: 8px; border-radius: 50%; background: #32D74B; }
+#usage-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  font-size: 11px;
+  color: #48484A;
+  border-top: 1px solid #2C2C2E;
+  margin-top: 6px;
+}
+.usage-footer-icons { display: flex; gap: 14px; font-size: 15px; color: #636366; }
+.usage-footer-icons span { cursor: pointer; line-height: 1; }
+.usage-footer-icons span:hover { color: #aeaeb2; }
+
+/* PROCESS BUTTON */
+#proc-btn {
+  padding: 7px 10px 9px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+#proc-btn:hover { color: var(--accent); }
+
+/* PROCESS POPUP */
+#proc-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+#proc-overlay.open { display: block; }
+#proc-backdrop {
+  position: absolute;
+  inset: 0;
+}
+#proc-popup {
+  position: absolute;
+  top: 46px;
+  left: 8px;
+  width: 280px;
+  background: #1c1c1e;
+  border-radius: 16px;
+  box-shadow: 0 12px 48px rgba(0,0,0,.85);
+  overflow: hidden;
+  z-index: 1;
+}
+#proc-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+#proc-body {
+  padding: 4px 0 8px;
+}
+.proc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.1s;
+  gap: 10px;
+}
+.proc-item:hover { background: rgba(255,255,255,0.06); }
+.proc-name { font-size: 13px; color: #aeaeb2; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.proc-port {
+  font-size: 13px;
+  font-weight: 600;
+  color: #58a6ff;
+  background: rgba(88,166,255,0.12);
+  padding: 3px 9px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+#proc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px 12px;
+  font-size: 11px;
+  color: #48484A;
+  border-top: 1px solid #2C2C2E;
+  margin-top: 2px;
+}
+.proc-footer-icons { display: flex; gap: 14px; font-size: 15px; color: #636366; }
+.proc-footer-icons span { cursor: pointer; line-height: 1; }
+.proc-footer-icons span:hover { color: #aeaeb2; }
 
 /* PROJECT TABS */
 #proj-bar {
@@ -113,6 +309,16 @@ body {
 }
 .sess-add:hover { color: var(--accent); }
 
+.proj-add {
+  padding: 7px 10px 9px;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.proj-add:hover { color: var(--accent); }
+
 /* MAIN */
 #main {
   flex: 1;
@@ -155,6 +361,8 @@ body {
   flex-shrink: 0;
 }
 .tool-btn:hover { color: var(--danger); border-color: var(--danger); }
+.tool-btn.close-btn:hover { color: var(--muted); border-color: var(--muted); }
+.tool-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
 
 /* CHAT */
 #chat {
@@ -186,6 +394,50 @@ body {
   border-bottom-left-radius: 4px;
   border: 1px solid var(--border);
 }
+.msg-img-card {
+  align-self: flex-end;
+  max-width: 240px;
+  background: var(--user-bg);
+  border-radius: 14px;
+  border-bottom-right-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.msg-img-card img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+.msg-img-meta {
+  padding: 7px 12px 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255,255,255,0.85);
+}
+.msg-img-text {
+  padding: 0 12px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #fff;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.msg-img-placeholder {
+  align-self: flex-end;
+  background: var(--user-bg);
+  border-radius: 14px;
+  border-bottom-right-radius: 4px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .msg.thinking {
   background: var(--ai-bg);
   align-self: flex-start;
@@ -196,6 +448,167 @@ body {
 }
 @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
 
+/* FILE VIEWER */
+#file-viewer {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+#file-tree-panel {
+  width: 230px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#file-tree-header {
+  padding: 8px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#file-tree-root {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+#file-tree-root::-webkit-scrollbar { width: 4px; }
+#file-tree-root::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  user-select: none;
+  color: var(--text);
+  min-height: 22px;
+}
+.tree-row:hover { background: var(--surface2); }
+.tree-row.selected { background: #1f3d5c; }
+.tree-arrow { font-size: 10px; color: var(--muted); width: 12px; flex-shrink: 0; transition: transform 0.1s; }
+.tree-icon { font-size: 13px; flex-shrink: 0; }
+.tree-name { overflow: hidden; text-overflow: ellipsis; }
+.tree-row.is-dir .tree-name { color: var(--text); }
+.tree-row.is-file .tree-name { color: #c9d1d9; }
+#file-content-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #0d1117;
+}
+#file-content-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  min-height: 35px;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+#file-content-tabs::-webkit-scrollbar { display: none; }
+.file-tab-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--text);
+  border-right: 1px solid var(--border);
+  background: #0d1117;
+  white-space: nowrap;
+  min-width: 0;
+}
+.file-tab-pill .fname { max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+.file-tab-pill .fpath { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+#file-content-body {
+  flex: 1;
+  overflow: auto;
+}
+#file-content-body::-webkit-scrollbar { width: 8px; height: 8px; }
+#file-content-body::-webkit-scrollbar-track { background: #0d1117; }
+#file-content-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#file-content-body pre {
+  margin: 0;
+  padding: 16px 0;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: max-content;
+}
+#file-content-body pre code.hljs {
+  background: transparent !important;
+  padding: 0;
+}
+.code-line {
+  display: flex;
+  padding: 0 16px 0 0;
+}
+.line-num {
+  color: #3d444d;
+  text-align: right;
+  min-width: 44px;
+  padding-right: 16px;
+  user-select: none;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.line-code { flex: 1; white-space: pre; }
+.code-line:hover { background: rgba(255,255,255,0.03); }
+#file-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+  flex-direction: column;
+  gap: 8px;
+}
+#file-img-wrap {
+  padding: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+#file-img-wrap img { max-width: 100%; border-radius: 6px; box-shadow: 0 4px 24px rgba(0,0,0,.4); }
+
+/* MODEL / EFFORT ROWS */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ctrl-label {
+  font-size: 10px;
+  color: var(--muted);
+  flex-shrink: 0;
+  width: 36px;
+}
+.ctrl-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ctrl-btn:hover { color: var(--text); border-color: var(--muted); }
+.ctrl-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(88,166,255,0.08); }
+
 /* INPUT */
 #input-area {
   background: var(--surface);
@@ -203,9 +616,40 @@ body {
   padding: 10px 12px;
   padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
   display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#input-row {
+  display: flex;
   align-items: flex-end;
   gap: 8px;
 }
+#img-preview-bar { display: none; }
+.img-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 10px 5px 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.img-chip img { width: 36px; height: 36px; object-fit: cover; border-radius: 4px; }
+.img-chip-remove { cursor: pointer; font-size: 13px; color: var(--muted); line-height: 1; }
+.img-chip-remove:hover { color: var(--danger); }
+.attach-label {
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--muted);
+  flex-shrink: 0;
+  line-height: 1;
+  padding: 8px 4px;
+  transition: color 0.15s;
+}
+.attach-label:hover { color: var(--accent); }
+.attach-label.has-img { color: var(--accent); }
 #input {
   flex: 1;
   background: var(--bg);
@@ -247,12 +691,68 @@ body {
 <div id="sess-bar" class="hidden"></div>
 <div id="main"></div>
 
+<div id="proc-overlay">
+  <div id="proc-backdrop" onclick="closeProc()"></div>
+  <div id="proc-popup">
+    <div id="proc-popup-header">
+      <div>실행 중인 서버</div>
+      <span id="proc-ts-badge" style="font-size:11px;color:#636366;font-weight:400"></span>
+    </div>
+    <div id="proc-body"><div style="color:#636366;font-size:13px;text-align:center;padding:24px">불러오는 중...</div></div>
+    <div id="proc-footer">
+      <span id="proc-ts-ip" style="font-size:11px;color:#48484A"></span>
+      <div class="proc-footer-icons">
+        <span title="새로고침" onclick="loadProc()">↻</span>
+        <span title="닫기" onclick="closeProc()">✕</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="usage-overlay">
+  <div id="usage-backdrop" onclick="closeUsage()"></div>
+  <div id="usage-popup">
+    <div id="usage-popup-header">
+      <div>Claude 사용량</div>
+      <div class="plan-badge">Max Plan</div>
+    </div>
+    <div id="usage-body"><div style="color:#636366;font-size:13px;text-align:center;padding:24px">Loading...</div></div>
+    <div id="usage-footer">
+      <span id="usage-updated">Last updated: just now</span>
+      <div class="usage-footer-icons">
+        <span title="새로고침" onclick="loadUsage()">↻</span>
+        <span title="닫기" onclick="closeUsage()">✕</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 let projects = [];
 let sessions = [];
 let activeProject = null;
 let activeSession = null;
-let isSending = false;
+let sendingSessions = new Set();
+let draftTimer = null;
+let pendingImage = null;
+let currentModel = localStorage.getItem('wssh_model') || '';
+let currentEffort = localStorage.getItem('wssh_effort') || '';
+const FILE_TAB = '__files__';
+let fileTreeCache = {};
+let expandedDirs = new Set();
+let selectedFilePath = null;
+
+function saveDraft() {
+  if (!activeSession) return;
+  const ta = document.getElementById('input');
+  if (!ta) return;
+  const val = ta.value;
+  if (val) localStorage.setItem('wssh_draft_' + activeSession, val);
+  else localStorage.removeItem('wssh_draft_' + activeSession);
+}
+function flushDraft() { clearTimeout(draftTimer); saveDraft(); }
+function loadDraft() { return activeSession ? (localStorage.getItem('wssh_draft_' + activeSession) || '') : ''; }
+function clearDraft() { if (activeSession) localStorage.removeItem('wssh_draft_' + activeSession); }
 
 // ── PERSIST ───────────────────────────────────────────
 function saveState() {
@@ -292,6 +792,18 @@ async function init() {
 function renderProjBar() {
   const bar = document.getElementById('proj-bar');
   bar.innerHTML = '';
+  const procBtn = document.createElement('div');
+  procBtn.id = 'proc-btn';
+  procBtn.textContent = '⚡';
+  procBtn.title = '실행 중인 서버';
+  procBtn.onclick = openProc;
+  bar.appendChild(procBtn);
+  const usageBtn = document.createElement('div');
+  usageBtn.id = 'usage-btn';
+  usageBtn.textContent = '📊';
+  usageBtn.title = '사용량';
+  usageBtn.onclick = openUsage;
+  bar.appendChild(usageBtn);
   projects.forEach(p => {
     const tab = document.createElement('div');
     tab.className = 'proj-tab' + (p.name === activeProject ? ' active' : '');
@@ -299,10 +811,38 @@ function renderProjBar() {
     tab.onclick = () => selectProject(p.name);
     bar.appendChild(tab);
   });
+  const add = document.createElement('div');
+  add.className = 'proj-add';
+  add.textContent = '+';
+  add.title = '새 프로젝트';
+  add.onclick = newProject;
+  bar.appendChild(add);
+}
+
+async function newProject() {
+  const name = prompt('새 프로젝트 이름을 입력하세요:');
+  if (!name || !name.trim()) return;
+  const res = await fetch('/api/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim() }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    alert('오류: ' + (err.detail || '알 수 없음'));
+    return;
+  }
+  const proj = await res.json();
+  projects.push(proj);
+  await selectProject(proj.name);
 }
 
 async function selectProject(name, preferSessId) {
+  flushDraft();
   activeProject = name;
+  fileTreeCache = {};
+  expandedDirs = new Set();
+  selectedFilePath = null;
   saveState();
   renderProjBar();
 
@@ -310,14 +850,17 @@ async function selectProject(name, preferSessId) {
   sessions = await res.json();
 
   if (sessions.length === 0) {
-    // auto-create first session
     const r = await fetch(`/api/projects/${name}/sessions`, { method: 'POST' });
     const s = await r.json();
     sessions = [s];
   }
 
-  const preferred = preferSessId && sessions.find(s => s.id === preferSessId);
-  await selectSession(preferred ? preferred.id : sessions[0].id);
+  if (preferSessId === FILE_TAB) {
+    await selectSession(FILE_TAB);
+  } else {
+    const preferred = preferSessId && sessions.find(s => s.id === preferSessId);
+    await selectSession(preferred ? preferred.id : sessions[0].id);
+  }
 }
 
 // ── SESSION BAR ───────────────────────────────────────
@@ -325,6 +868,15 @@ function renderSessBar() {
   const bar = document.getElementById('sess-bar');
   bar.className = '';
   bar.innerHTML = '';
+
+  const fTab = document.createElement('div');
+  fTab.className = 'sess-tab' + (activeSession === FILE_TAB ? ' active' : '');
+  fTab.title = '파일 탐색기';
+  fTab.style.cssText = 'padding:5px 10px;font-size:14px;';
+  fTab.textContent = '📁';
+  fTab.onclick = () => selectSession(FILE_TAB);
+  bar.appendChild(fTab);
+
   sessions.forEach(s => {
     const tab = document.createElement('div');
     tab.className = 'sess-tab' + (s.id === activeSession ? ' active' : '');
@@ -350,10 +902,12 @@ async function newSession() {
 
 // ── SESSION SELECT ─────────────────────────────────────
 async function selectSession(sid) {
+  flushDraft();
+  pendingImage = null;
   activeSession = sid;
   saveState();
   renderSessBar();
-
+  if (sid === FILE_TAB) { renderFileViewer(); return; }
   const res = await fetch(`/api/sessions/${sid}/messages`);
   const messages = await res.json();
   renderChat(messages);
@@ -365,21 +919,61 @@ function renderChat(messages) {
   document.getElementById('main').innerHTML = `
     <div id="toolbar">
       <span class="proj-path">${esc(proj?.path || '')}</span>
-      <button class="tool-btn" onclick="resetSession()">초기화</button>
+      <div style="display:flex;gap:6px;">
+        <button class="tool-btn" onclick="resetSession()">초기화</button>
+        <button class="tool-btn close-btn" onclick="closeSession()" ${sessions.length <= 1 ? 'disabled' : ''}>세션 닫기</button>
+      </div>
     </div>
     <div id="chat"></div>
     <div id="input-area">
-      <textarea id="input" placeholder="메시지 입력..." rows="1"></textarea>
-      <button id="send-btn" onclick="sendMsg()">↑</button>
+      <div class="ctrl-row" id="model-row">
+        <span class="ctrl-label">Model</span>
+        <button class="ctrl-btn ${currentModel===''?'active':''}" onclick="setModel('')">default</button>
+        <button class="ctrl-btn ${currentModel==='haiku'?'active':''}" onclick="setModel('haiku')">haiku</button>
+        <button class="ctrl-btn ${currentModel==='sonnet'?'active':''}" onclick="setModel('sonnet')">sonnet</button>
+        <button class="ctrl-btn ${currentModel==='opus'?'active':''}" onclick="setModel('opus')">opus</button>
+        <button class="ctrl-btn ${currentModel==='fable'?'active':''}" onclick="setModel('fable')">fable</button>
+      </div>
+      <div class="ctrl-row" id="effort-row">
+        <span class="ctrl-label">Effort</span>
+        <button class="ctrl-btn ${currentEffort===''?'active':''}" onclick="setEffort('')">default</button>
+        <button class="ctrl-btn ${currentEffort==='high'?'active':''}" onclick="setEffort('high')">high</button>
+        <button class="ctrl-btn ${currentEffort==='xhigh'?'active':''}" onclick="setEffort('xhigh')">extra high</button>
+        <button class="ctrl-btn ${currentEffort==='max'?'active':''}" onclick="setEffort('max')">max</button>
+      </div>
+      <div id="img-preview-bar"></div>
+      <div id="input-row">
+        <textarea id="input" placeholder="메시지 입력..." rows="1"></textarea>
+        <label class="attach-label" id="attach-label" title="이미지 첨부">
+          📎<input type="file" id="file-attach" accept="image/*" style="display:none">
+        </label>
+        <button id="send-btn" onclick="sendMsg()">↑</button>
+      </div>
     </div>`;
 
   const chat = document.getElementById('chat');
-  messages.forEach(m => addBubble(chat, m.role, m.content));
+  messages.forEach(m => {
+    if (m.image_data || m.image_large || m.image_mime) {
+      addImageCard(chat, m);
+    } else {
+      addBubble(chat, m.role, m.content);
+    }
+  });
   scrollBottom();
 
   const ta = document.getElementById('input');
-  ta.addEventListener('input', autoResize);
+  const draft = loadDraft();
+  if (draft) { ta.value = draft; autoResize(); }
+  ta.addEventListener('input', () => {
+    autoResize();
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 600);
+  });
   ta.addEventListener('keydown', handleKey);
+  ta.addEventListener('paste', handleImgPaste);
+  document.getElementById('file-attach').addEventListener('change', function() {
+    if (this.files[0]) { attachImage(this.files[0]); this.value = ''; }
+  });
   ta.focus();
 }
 
@@ -391,10 +985,38 @@ function addBubble(container, role, content) {
   return div;
 }
 
+function addImageCard(container, m) {
+  if (m.image_data) {
+    const card = document.createElement('div');
+    card.className = 'msg-img-card';
+    const img = document.createElement('img');
+    img.src = `data:${m.image_mime};base64,${m.image_data}`;
+    img.alt = '첨부 이미지';
+    card.appendChild(img);
+    const meta = document.createElement('div');
+    meta.className = 'msg-img-meta';
+    meta.innerHTML = '📎 <span>이미지 첨부</span>';
+    card.appendChild(meta);
+    if (m.content) {
+      const txt = document.createElement('div');
+      txt.className = 'msg-img-text';
+      txt.textContent = m.content;
+      card.appendChild(txt);
+    }
+    container.appendChild(card);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'msg-img-placeholder';
+    ph.innerHTML = '🖼️ <span>이미지 첨부됨</span>';
+    container.appendChild(ph);
+    if (m.content) { addBubble(container, 'user', m.content); }
+  }
+}
+
 function handleKey(e) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault();
-    if (!isSending) sendMsg();
+    if (!sendingSessions.has(activeSession)) sendMsg();
   }
 }
 
@@ -409,19 +1031,70 @@ function scrollBottom() {
   if (chat) chat.scrollTop = chat.scrollHeight;
 }
 
+function attachImage(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    const [header, b64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)[1];
+    pendingImage = { data: b64, mime, name: file.name, dataUrl };
+    const bar = document.getElementById('img-preview-bar');
+    const label = document.getElementById('attach-label');
+    if (bar) {
+      bar.style.display = 'block';
+      bar.innerHTML = `<div class="img-chip">
+        <img src="${dataUrl}" alt="첨부">
+        <span>${esc(file.name)}</span>
+        <span class="img-chip-remove" onclick="removeImage()">✕</span>
+      </div>`;
+    }
+    if (label) label.classList.add('has-img');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  pendingImage = null;
+  const bar = document.getElementById('img-preview-bar');
+  if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+  const label = document.getElementById('attach-label');
+  if (label) label.classList.remove('has-img');
+}
+
+function handleImgPaste(e) {
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      attachImage(item.getAsFile());
+      return;
+    }
+  }
+}
+
 async function sendMsg() {
-  if (!activeSession || isSending) return;
+  if (!activeSession || sendingSessions.has(activeSession)) return;
+  const sid = activeSession;
   const ta = document.getElementById('input');
   const text = ta.value.trim();
-  if (!text) return;
+  if (!text && !pendingImage) return;
 
-  isSending = true;
+  sendingSessions.add(sid);
+  clearDraft();
+  const img = pendingImage;
+  removeImage();
   ta.value = '';
   ta.style.height = 'auto';
   document.getElementById('send-btn').disabled = true;
 
   const chat = document.getElementById('chat');
-  addBubble(chat, 'user', text);
+  if (img) {
+    addImageCard(chat, { image_data: img.data, image_mime: img.mime, content: text });
+  } else {
+    addBubble(chat, 'user', text);
+  }
+
   const thinking = document.createElement('div');
   thinking.className = 'msg thinking';
   thinking.textContent = '생각 중...';
@@ -429,37 +1102,332 @@ async function sendMsg() {
   scrollBottom();
 
   try {
-    const res = await fetch(`/api/sessions/${activeSession}/chat`, {
+    const body = { text: text || '', model: currentModel || null, effort: currentEffort || null };
+    if (img) { body.image_data = img.data; body.image_mime = img.mime; }
+    const res = await fetch(`/api/sessions/${sid}/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     thinking.remove();
-    addBubble(chat, 'assistant', res.ok ? data.reply : ('오류: ' + (data.detail || '알 수 없음')));
-
-    // Update session name in tab after first message
+    if (activeSession === sid) {
+      addBubble(document.getElementById('chat'), 'assistant', res.ok ? data.reply : ('오류: ' + (data.detail || '알 수 없음')));
+    }
     if (res.ok && data.session_name) {
-      const s = sessions.find(s => s.id === activeSession);
+      const s = sessions.find(s => s.id === sid);
       if (s) { s.name = data.session_name; renderSessBar(); }
     }
   } catch (e) {
     thinking.remove();
-    addBubble(chat, 'assistant', '연결 오류: ' + e.message);
+    if (activeSession === sid) {
+      try {
+        const r = await fetch(`/api/sessions/${sid}/messages`);
+        const msgs = await r.json();
+        renderChat(msgs);
+      } catch {
+        const errBubble = addBubble(document.getElementById('chat'), 'assistant', '연결 오류: ' + e.message + '\n↩ 탭하여 새로고침');
+        errBubble.style.cursor = 'pointer';
+        errBubble.onclick = () => selectSession(sid);
+      }
+    }
   }
 
-  scrollBottom();
-  isSending = false;
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('input')?.focus();
+  sendingSessions.delete(sid);
+  if (activeSession === sid) {
+    scrollBottom();
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('input')?.focus();
+  }
 }
 
 async function resetSession() {
-  if (!activeSession || !confirm('이 세션의 대화를 초기화할까요?')) return;
+  if (!activeSession || activeSession === FILE_TAB || !confirm('이 세션의 대화를 초기화할까요?')) return;
   await fetch(`/api/sessions/${activeSession}/reset`, { method: 'POST' });
-  const s = sessions.find(s => s.id === activeSession);
-  if (s) s.name = s.name; // keep name
   renderChat([]);
+}
+
+async function closeSession() {
+  if (!activeSession || activeSession === FILE_TAB || sessions.length <= 1) return;
+  if (!confirm('이 세션을 닫을까요? 대화 내용이 삭제됩니다.')) return;
+  const sid = activeSession;
+  const res = await fetch(`/api/sessions/${sid}`, { method: 'DELETE' });
+  if (!res.ok) { alert('세션 삭제 실패: 서버를 재시작해주세요.'); return; }
+  sessions = sessions.filter(s => s.id !== sid);
+  await selectSession(sessions[0].id);
+}
+
+// ── FILE VIEWER ───────────────────────────────────────
+function renderFileViewer() {
+  document.getElementById('main').innerHTML = `
+    <div id="file-viewer">
+      <div id="file-tree-panel">
+        <div id="file-tree-header">탐색기</div>
+        <div id="file-tree-root"></div>
+      </div>
+      <div id="file-content-panel">
+        <div id="file-content-tabs"></div>
+        <div id="file-content-body">
+          <div id="file-empty"><span style="font-size:32px">📄</span><span>파일을 선택하세요</span></div>
+        </div>
+      </div>
+    </div>`;
+  loadAndRenderTree('');
+}
+
+async function loadAndRenderTree(dirPath) {
+  if (!fileTreeCache[dirPath]) {
+    const res = await fetch(`/api/projects/${activeProject}/tree?path=${encodeURIComponent(dirPath)}`);
+    fileTreeCache[dirPath] = await res.json();
+  }
+  renderTreeNode(document.getElementById('file-tree-root'), '', 0);
+}
+
+function renderTreeNode(container, dirPath, depth) {
+  if (depth === 0) container.innerHTML = '';
+  const items = fileTreeCache[dirPath] || [];
+  items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'tree-row ' + (item.type === 'dir' ? 'is-dir' : 'is-file') +
+                   (selectedFilePath === item.path ? ' selected' : '');
+    row.style.paddingLeft = (8 + depth * 14) + 'px';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'tree-arrow';
+
+    const icon = document.createElement('span');
+    icon.className = 'tree-icon';
+
+    const name = document.createElement('span');
+    name.className = 'tree-name';
+    name.textContent = item.name;
+
+    if (item.type === 'dir') {
+      const open = expandedDirs.has(item.path);
+      arrow.textContent = open ? '▾' : '▸';
+      icon.textContent = open ? '📂' : '📁';
+      row.appendChild(arrow);
+      row.appendChild(icon);
+      row.appendChild(name);
+      container.appendChild(row);
+      if (open && fileTreeCache[item.path]) {
+        renderTreeNode(container, item.path, depth + 1);
+      }
+      row.onclick = () => toggleDir(item.path, depth);
+    } else {
+      arrow.textContent = '';
+      icon.textContent = fileIcon(item.name);
+      row.appendChild(arrow);
+      row.appendChild(icon);
+      row.appendChild(name);
+      container.appendChild(row);
+      row.onclick = () => openFile(item.path, item.name);
+    }
+  });
+}
+
+async function toggleDir(path, depth) {
+  if (expandedDirs.has(path)) {
+    expandedDirs.delete(path);
+    renderTreeNode(document.getElementById('file-tree-root'), '', 0);
+  } else {
+    expandedDirs.add(path);
+    if (!fileTreeCache[path]) {
+      const res = await fetch(`/api/projects/${activeProject}/tree?path=${encodeURIComponent(path)}`);
+      fileTreeCache[path] = await res.json();
+    }
+    renderTreeNode(document.getElementById('file-tree-root'), '', 0);
+  }
+}
+
+async function openFile(path, name) {
+  selectedFilePath = path;
+  renderTreeNode(document.getElementById('file-tree-root'), '', 0);
+
+  const tabs = document.getElementById('file-content-tabs');
+  const body = document.getElementById('file-content-body');
+  if (tabs) tabs.innerHTML = `<div class="file-tab-pill"><span class="tree-icon">${fileIcon(name)}</span><span class="fname">${esc(name)}</span><span class="fpath">${esc(path)}</span></div>`;
+  if (body) body.innerHTML = '<div id="file-empty"><span>로딩 중...</span></div>';
+
+  const res = await fetch(`/api/projects/${activeProject}/file?path=${encodeURIComponent(path)}`);
+  const data = await res.json();
+  if (!body) return;
+
+  if (data.type === 'image') {
+    body.innerHTML = `<div id="file-img-wrap"><img src="data:${data.mime};base64,${data.data}" alt="${esc(name)}"></div>`;
+  } else if (data.type === 'text') {
+    const lines = data.content.split('\n');
+    const pre = document.createElement('pre');
+    const code = document.createElement('code');
+    const ext = name.includes('.') ? name.split('.').pop() : '';
+    if (ext) code.className = `language-${ext}`;
+    code.textContent = data.content;
+    pre.appendChild(code);
+    body.innerHTML = '';
+    body.appendChild(pre);
+    if (window.hljs) {
+      try { hljs.highlightElement(code); } catch {}
+      // Wrap lines for line numbers
+      const highlighted = code.innerHTML;
+      const linesHtml = highlighted.split('\n').map((l, i) =>
+        `<span class="code-line"><span class="line-num">${i + 1}</span><span class="line-code">${l}</span></span>`
+      ).join('');
+      code.innerHTML = linesHtml;
+    }
+  } else {
+    body.innerHTML = '<div id="file-empty"><span>바이너리 파일은 미리볼 수 없습니다</span></div>';
+  }
+}
+
+function fileIcon(name) {
+  const ext = (name.includes('.') ? name.split('.').pop() : '').toLowerCase();
+  const m = { js:'🟨', ts:'🔷', tsx:'🔷', jsx:'🟨', py:'🐍', json:'📋', md:'📝',
+              html:'🌐', css:'🎨', scss:'🎨', yaml:'⚙️', yml:'⚙️', sh:'⚡',
+              png:'🖼️', jpg:'🖼️', jpeg:'🖼️', gif:'🖼️', svg:'🖼️', webp:'🖼️',
+              pdf:'📄', zip:'📦', txt:'📄', env:'🔒', toml:'⚙️', rs:'🦀', go:'🐹' };
+  return m[ext] || '📄';
+}
+
+// ── PROCESS POPUP ─────────────────────────────────────
+function openProc() {
+  document.getElementById('proc-overlay').classList.add('open');
+  loadProc();
+}
+function closeProc() {
+  document.getElementById('proc-overlay').classList.remove('open');
+}
+async function loadProc() {
+  document.getElementById('proc-body').innerHTML =
+    '<div style="color:#636366;font-size:13px;text-align:center;padding:24px">불러오는 중...</div>';
+  try {
+    const res = await fetch('/api/processes');
+    const d = await res.json();
+    renderProc(d);
+  } catch {
+    document.getElementById('proc-body').innerHTML =
+      '<div style="color:#FF453A;font-size:13px;text-align:center;padding:24px">불러오기 실패</div>';
+  }
+}
+function renderProc(d) {
+  const ip = d.getElementById ? null : d.tailscale_ip;
+  document.getElementById('proc-ts-ip').textContent = d.tailscale_ip
+    ? 'Tailscale: ' + d.tailscale_ip : '(Tailscale 연결 안됨)';
+  const servers = d.servers || [];
+  if (!servers.length) {
+    document.getElementById('proc-body').innerHTML =
+      '<div style="color:#636366;font-size:13px;text-align:center;padding:24px">실행 중인 서버 없음</div>';
+    return;
+  }
+  document.getElementById('proc-body').innerHTML = servers.map(s => `
+    <div class="proc-item" onclick="window.open('${s.url}','_blank')">
+      <span class="proc-name">${s.name}</span>
+      <span class="proc-port">:${s.port}</span>
+    </div>
+  `).join('');
+}
+
+// ── USAGE POPUP ───────────────────────────────────────
+function openUsage() {
+  document.getElementById('usage-overlay').classList.add('open');
+  loadUsage();
+}
+function closeUsage() {
+  document.getElementById('usage-overlay').classList.remove('open');
+}
+
+async function loadUsage() {
+  const body = document.getElementById('usage-body');
+  body.innerHTML = '<div style="color:#636366;font-size:13px;text-align:center;padding:24px">Loading...</div>';
+  try {
+    const res = await fetch('/api/usage');
+    const d = await res.json();
+    renderUsage(d);
+    const el = document.getElementById('usage-updated');
+    if (el) el.textContent = 'Last updated: just now';
+  } catch (e) {
+    body.innerHTML = `<div style="color:#FF453A;font-size:13px;text-align:center;padding:24px">불러오기 실패</div>`;
+  }
+}
+
+function renderUsage(d) {
+  const fmtK = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n);
+  const fmtMin = (m) => m >= 60
+    ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분'
+    : m + '분';
+
+  const w = d.window_5h;
+  const t = d.today;
+  const mo = d.month;
+
+  // 5h 윈도우를 오늘 대비 비율로 게이지 표시
+  // 오늘 = 기준점 100%. 5h윈도우 / 오늘 * 100
+  const todayTotal = t.total || 1;
+  const winPct  = Math.min((w.total  / todayTotal) * 100, 100);
+  const monRef  = mo.total || 1;
+  // 오늘이 이번 달 평균 대비 얼마나 쓰는지
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const avgPerDay = monRef / dayOfMonth;
+  const todayPct = avgPerDay > 0 ? Math.min((t.total / (avgPerDay * 2)) * 100, 100) : 0;
+
+  const barCls = (p) => p >= 80 ? 'danger' : p >= 50 ? 'warn' : '';
+  const pctCls = (p) => p >= 80 ? 'red'    : p >= 50 ? 'yellow' : '';
+
+  const bar = (pct, cls) => pct < 1
+    ? `<div class="usage-dot-row"><div class="usage-dot"></div></div>`
+    : `<div class="usage-bar-wrap"><div class="usage-bar ${cls}" style="width:${pct.toFixed(1)}%"></div></div>`;
+
+  const winReset  = w.calls > 0  ? `리셋까지 ${fmtMin(w.resets_in_min)}` : '최근 5시간 활동 없음';
+  const todayReset = t.calls > 0 ? `자정까지 ${fmtMin(t.resets_in_min)}` : '오늘 활동 없음';
+
+  const block = (b, label, pct, resetLabel) => {
+    const cacheTotal = b.cache_read + b.cache_creation;
+    return `
+      <div class="usage-item">
+        <div class="usage-item-row">
+          <span class="usage-item-name">${label}</span>
+          <span class="usage-pct ${pctCls(pct)}">${b.calls > 0 ? fmtK(b.total) + ' 토큰' : '없음'}</span>
+        </div>
+        ${bar(pct, barCls(pct))}
+        ${b.calls > 0 ? `
+        <div class="usage-item-sub" style="margin-top:3px">
+          입력 ${fmtK(b.input)} · 출력 ${fmtK(b.output)} · ${b.calls}회
+        </div>
+        <div class="usage-item-sub">
+          캐시 재사용 ${fmtK(b.cache_read)} · 생성 ${fmtK(b.cache_creation)}
+        </div>` : ''}
+        <div class="usage-item-sub">${resetLabel}</div>
+      </div>`;
+  };
+
+  document.getElementById('usage-body').innerHTML = `
+    <div class="usage-section-header" style="padding-top:6px">최근 5시간 <span style="font-size:10px;font-weight:400;color:#636366">(rate limit 기준)</span></div>
+    ${block(w, '처리 토큰', winPct, winReset)}
+    <div class="usage-section-header">오늘</div>
+    ${block(t, '처리 토큰', todayPct, todayReset)}
+    <div class="usage-section-header">이번 달</div>
+    ${block(mo, '처리 토큰', 0, mo.calls + '회 요청')}
+  `;
+}
+
+// ── MODEL / EFFORT ────────────────────────────────────
+function setModel(m) {
+  currentModel = m;
+  localStorage.setItem('wssh_model', m);
+  document.querySelectorAll('#model-row .ctrl-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.textContent.trim() === (m || 'default'));
+  });
+}
+function setEffort(e) {
+  currentEffort = e;
+  localStorage.setItem('wssh_effort', e);
+  document.querySelectorAll('#effort-row .ctrl-btn').forEach(btn => {
+    const label = btn.textContent.trim();
+    const match = e === '' ? label === 'default'
+      : e === 'xhigh' ? label === 'extra high'
+      : label === e;
+    btn.classList.toggle('active', match);
+  });
 }
 
 // ── EMPTY ─────────────────────────────────────────────
