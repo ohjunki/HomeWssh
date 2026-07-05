@@ -115,70 +115,43 @@ def session_summary(s: dict) -> dict:
 
 
 @app.get("/api/usage")
-def get_usage():
-    from datetime import timezone, timedelta
+async def get_usage():
+    import re as _re
 
-    CLAUDE_PROJECTS = Path.home() / ".claude" / "projects"
+    # /usage 슬래시 커맨드 실행 (토큰 0 소비)
+    try:
+        rc, stdout, stderr = await run_claude(
+            [CLAUDE_BIN, "-p", "--output-format", "json", "--dangerously-skip-permissions"],
+            cwd=str(BASE),
+            stdin_data=b"/usage\n",
+        )
+        raw = json.loads(stdout).get("result", "")
+    except Exception:
+        raw = ""
 
-    now = datetime.now(timezone.utc)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    window_start = now - timedelta(hours=5)
-    month_start = today_start.replace(day=1)
+    def parse_pct(text: str, pattern: str) -> Optional[int]:
+        m = _re.search(pattern, text)
+        return int(m.group(1)) if m else None
 
-    seen = set()
-    buckets = {k: {"input": 0, "output": 0, "cache_read": 0, "cache_creation": 0, "calls": 0}
-               for k in ("window_5h", "today", "month")}
-    window_timestamps = []
+    def parse_reset(text: str, pattern: str) -> Optional[str]:
+        m = _re.search(pattern, text)
+        return m.group(1).strip() if m else None
 
-    for jsonl in CLAUDE_PROJECTS.glob("**/*.jsonl"):
-        try:
-            for line in jsonl.read_text(errors="replace").splitlines():
-                try:
-                    d = json.loads(line)
-                    msg = d.get("message", {})
-                    usage = msg.get("usage")
-                    msg_id = msg.get("id", "")
-                    ts_str = d.get("timestamp", "")
-                    if not usage or not ts_str or not msg_id or msg_id in seen:
-                        continue
-                    seen.add(msg_id)
-                    ts = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
-                    inp = usage.get("input_tokens", 0)
-                    out = usage.get("output_tokens", 0)
-                    cr = usage.get("cache_read_input_tokens", 0)
-                    cc = usage.get("cache_creation_input_tokens", 0)
-                    for name, start in [("window_5h", window_start), ("today", today_start), ("month", month_start)]:
-                        if ts >= start:
-                            b = buckets[name]
-                            b["input"] += inp; b["output"] += out
-                            b["cache_read"] += cr; b["cache_creation"] += cc
-                            b["calls"] += 1
-                    if ts >= window_start:
-                        window_timestamps.append(ts)
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-    # 5h 윈도우 리셋: 가장 오래된 메시지가 5h 밖으로 나가는 시점
-    if window_timestamps:
-        oldest = min(window_timestamps)
-        resets_at_dt = oldest + timedelta(hours=5)
-        resets_in_min = max(0, int((resets_at_dt - now).total_seconds() / 60))
-        resets_at = resets_at_dt.isoformat()
-    else:
-        resets_in_min = 0
-        resets_at = None
-
-    today_reset_min = int((today_start + timedelta(days=1) - now).total_seconds() / 60)
-
-    def fmt(b):
-        return {**b, "total": b["input"] + b["output"]}
+    session_pct   = parse_pct(raw,   r"Current session:\s*(\d+)%")
+    session_reset = parse_reset(raw, r"Current session:.*?resets\s+(.+?)(?:\n|$)")
+    week_pct      = parse_pct(raw,   r"Current week \(all models\):\s*(\d+)%")
+    week_reset    = parse_reset(raw, r"Current week \(all models\):.*?resets\s+(.+?)(?:\n|$)")
+    fable_pct     = parse_pct(raw,   r"Current week \(Fable\):\s*(\d+)%")
+    req_24h       = parse_pct(raw,   r"Last 24h\s*·\s*(\d+) requests")
+    req_7d        = parse_pct(raw,   r"Last 7d\s*·\s*(\d+) requests")
 
     return {
-        "window_5h": {**fmt(buckets["window_5h"]), "resets_in_min": resets_in_min, "resets_at": resets_at},
-        "today": {**fmt(buckets["today"]), "resets_in_min": today_reset_min},
-        "month": fmt(buckets["month"]),
+        "session":      {"pct": session_pct, "resets": session_reset},
+        "week":         {"pct": week_pct,    "resets": week_reset},
+        "week_fable":   {"pct": fable_pct},
+        "requests_24h": req_24h,
+        "requests_7d":  req_7d,
+        "raw":          raw,
     }
 
 

@@ -1362,63 +1362,41 @@ async function loadUsage() {
 }
 
 function renderUsage(d) {
-  const fmtK = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n);
-  const fmtMin = (m) => m >= 60
-    ? Math.floor(m / 60) + '시간 ' + (m % 60) + '분'
-    : m + '분';
-
-  const w = d.window_5h;
-  const t = d.today;
-  const mo = d.month;
-
-  // 5h 윈도우를 오늘 대비 비율로 게이지 표시
-  // 오늘 = 기준점 100%. 5h윈도우 / 오늘 * 100
-  const todayTotal = t.total || 1;
-  const winPct  = Math.min((w.total  / todayTotal) * 100, 100);
-  const monRef  = mo.total || 1;
-  // 오늘이 이번 달 평균 대비 얼마나 쓰는지
-  const now = new Date();
-  const dayOfMonth = now.getDate();
-  const avgPerDay = monRef / dayOfMonth;
-  const todayPct = avgPerDay > 0 ? Math.min((t.total / (avgPerDay * 2)) * 100, 100) : 0;
-
   const barCls = (p) => p >= 80 ? 'danger' : p >= 50 ? 'warn' : '';
   const pctCls = (p) => p >= 80 ? 'red'    : p >= 50 ? 'yellow' : '';
 
-  const bar = (pct, cls) => pct < 1
-    ? `<div class="usage-dot-row"><div class="usage-dot"></div></div>`
-    : `<div class="usage-bar-wrap"><div class="usage-bar ${cls}" style="width:${pct.toFixed(1)}%"></div></div>`;
-
-  const winReset  = w.calls > 0  ? `리셋까지 ${fmtMin(w.resets_in_min)}` : '최근 5시간 활동 없음';
-  const todayReset = t.calls > 0 ? `자정까지 ${fmtMin(t.resets_in_min)}` : '오늘 활동 없음';
-
-  const block = (b, label, pct, resetLabel) => {
-    const cacheTotal = b.cache_read + b.cache_creation;
-    return `
-      <div class="usage-item">
-        <div class="usage-item-row">
-          <span class="usage-item-name">${label}</span>
-          <span class="usage-pct ${pctCls(pct)}">${b.calls > 0 ? fmtK(b.total) + ' 토큰' : '없음'}</span>
-        </div>
-        ${bar(pct, barCls(pct))}
-        ${b.calls > 0 ? `
-        <div class="usage-item-sub" style="margin-top:3px">
-          입력 ${fmtK(b.input)} · 출력 ${fmtK(b.output)} · ${b.calls}회
-        </div>
-        <div class="usage-item-sub">
-          캐시 재사용 ${fmtK(b.cache_read)} · 생성 ${fmtK(b.cache_creation)}
-        </div>` : ''}
-        <div class="usage-item-sub">${resetLabel}</div>
-      </div>`;
+  const bar = (pct) => {
+    if (pct == null) return '';
+    const p = Math.min(pct, 100);
+    return `<div class="usage-bar-wrap"><div class="usage-bar ${barCls(p)}" style="width:${p}%"></div></div>`;
   };
 
+  const block = (label, pct, resetStr, sub) => `
+    <div class="usage-item">
+      <div class="usage-item-row">
+        <span class="usage-item-name">${label}</span>
+        <span class="usage-pct ${pctCls(pct ?? 0)}">${pct != null ? pct + '%' : '-'}</span>
+      </div>
+      ${bar(pct)}
+      ${resetStr ? `<div class="usage-item-sub">${resetStr}</div>` : ''}
+      ${sub       ? `<div class="usage-item-sub">${sub}</div>` : ''}
+    </div>`;
+
+  const s = d.session   || {};
+  const w = d.week      || {};
+  const f = d.week_fable || {};
+
   document.getElementById('usage-body').innerHTML = `
-    <div class="usage-section-header" style="padding-top:6px">최근 5시간 <span style="font-size:10px;font-weight:400;color:#636366">(rate limit 기준)</span></div>
-    ${block(w, '처리 토큰', winPct, winReset)}
-    <div class="usage-section-header">오늘</div>
-    ${block(t, '처리 토큰', todayPct, todayReset)}
-    <div class="usage-section-header">이번 달</div>
-    ${block(mo, '처리 토큰', 0, mo.calls + '회 요청')}
+    <div class="usage-section-header" style="padding-top:6px">현재 세션 <span style="font-size:10px;font-weight:400;color:#636366">(5시간 윈도우)</span></div>
+    ${block('세션 사용량', s.pct, s.resets ? '리셋: ' + s.resets : null, null)}
+    <div class="usage-section-header">이번 주</div>
+    ${block('전체 모델', w.pct, w.resets ? '리셋: ' + w.resets : null, null)}
+    ${block('Fable 모델', f.pct, null, null)}
+    <div class="usage-section-header">요청 수</div>
+    <div class="usage-item">
+      <div class="usage-item-sub" style="padding:2px 0">최근 24시간: <strong style="color:#fff">${d.requests_24h ?? '-'}회</strong></div>
+      <div class="usage-item-sub">최근 7일: <strong style="color:#fff">${d.requests_7d ?? '-'}회</strong></div>
+    </div>
   `;
 }
 
